@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Todo List</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1,user-scalable=no,maximum-scale=1">
+    <link rel="stylesheet" type="text/css" media="screen" href="todo.css"/>
+    <script src="compatible.js"></script>
+</head>
+<body>
+<div id="todo-app">
+    <header class="header">
+        <h1>todo list</h1>
+    </header>
+
+    <section class="main">
+        <!-- Add New Item -->
+        <div id="add-new-item">
+            <div class="toggle-all"></div>
+            <input id="new-todo" type="text" placeholder="What needs to be done?" autofocus>
+            <button id="add-btn">+</button>
+        </div>
+
+        <!-- Show List -->
+        <div id="show-list">
+            <div id="show-bar">
+                <span id="todo-count">10 item left</span>
+                <ul class="filters">
+                    <li><a class="selected">All</a></li>
+                    <li><a class="">Active</a></li>
+                    <li><a class="">Completed</a></li>
+                </ul>
+            </div>
+            <scroll-container id="todo-list"></scroll-container>
+        </div>
+
+        <!--footer-->
+        <footer class="footer">
+            <button id="clear-btn">Clear completed</button>
+        </footer>
+    </section>
+</div>
+<script src="hammer.min.js"></script>
+<script src="model.js"></script>
+<script src="ajax.js"></script>
+<script src="provider-ajax.js"></script>
+<script src="todo.js"></script>
+</body>
+</html>
