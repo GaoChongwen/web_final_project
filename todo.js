@@ -17,8 +17,19 @@ let COMPLETED = 'completed';
 let SELECTED = 'selected';
 let EDIT = 'edit';
 let SELECTED_ALL = 'selected-all';
+
+// 记录已右滑显示的item与已长按显示的item
 let expansion = null;
 let fullTextItem = null;
+
+// 日期正则匹配
+const dateRegex = /\(\d{4}\.[0-1]\d\.[0-3]\d-\d{4}\.[0-1]\d\.[0-3]\d\)/g;
+const tdRegex = /\(td\)/g;
+
+// ifttt 最晚时间点
+const ADVANCED_DAY = 3;
+let warningMsg = '';
+let warningIndexList = [];
 
 function update() {
     // 更新服务器的数据
@@ -31,6 +42,29 @@ function update() {
 
     data.items.forEach(function (itemData, index) {
         if (!itemData.completed) activeCount++;
+
+        // 如果未完成，且有时间限制，且并未提醒过
+        if (!itemData.completed && itemData.timeLimited && !itemData.alerted) {
+            console.log(itemData);
+            let remainingDay = checkDelay(itemData.dateStr);
+
+            // 需要预警
+            if (remainingDay !== -2) {
+                let warningDayStr = '';
+
+                // 过期预警
+                if (remainingDay === -1) {
+                    warningDayStr = '您的' + itemData.msg + '已过期！' + "<br>";
+                } else {
+                    let endStr = itemData.dateStr.substring(itemData.dateStr.length / 2 + 1, itemData.dateStr.length);
+                    warningDayStr = '您的' + itemData.msg + '距离截止日期' + endStr + "仅剩" + remainingDay + "天！" + "<br>";
+                }
+
+                warningMsg += warningDayStr;
+                warningIndexList.push(index);
+            }
+        }
+
         // 过滤
         if (
             data.filter === 'All'
@@ -54,6 +88,10 @@ function update() {
         if (data.filter === filter.innerHTML) filter.classList.add(SELECTED);
         else filter.classList.remove(SELECTED);
     });
+
+    // 预警
+    sendWarningMsg();
+    console.log(data);
 }
 
 function initUI(data) {
@@ -120,10 +158,116 @@ function initUI(data) {
             console.warn('input msg is empty');
             return;
         }
-        data.items.push({msg: data.msg, completed: false});
+
+        let [_msg, _success, _isTd, _dateStr] = getDate(data.msg);
+        // data.items.push({msg: msg, completed: false});
+        data.items.push({
+            msg: _msg,
+            completed: false,
+            timeLimited: _success,
+            alerted: false,
+            isTd: _isTd,
+            dateStr: _dateStr
+        });
+
         data.msg = '';
         update();
     }
+}
+
+function getDate(data) {
+    let msg = data;
+    // let yStart = null, mStart = null, dStart = null, yEnd = null, mEnd = null,
+    //     dEnd = null;
+    let success = false, isTd = false;
+    let dateStr = '', startStr = '', endStr = '';
+
+    let dateSrc = dateRegex.exec(data);
+    let tdSrc = tdRegex.exec(data);
+
+    // 均匹配失败，默认为无时间，不处理msg
+    if (!dateSrc && !tdSrc) {
+        return [msg, success, isTd, dateStr];
+    } else {
+        success = true;
+    }
+
+    // (td)匹配成功，处理为今天
+    if (tdSrc) {
+        // 获取当前日期
+        let date = new Date();
+
+        msg = data.substring(0, tdSrc.index) + data.substring(tdRegex.lastIndex, data.length + 1);
+        isTd = true;
+        dateStr = dateFormat(date) + '-' + dateFormat(date);
+        return [msg, success, isTd, dateStr];
+    }
+
+    // (yyyy.mm.dd-yyyy.mm.dd)匹配成功，处理时间
+    if (dateSrc) {
+        dateStr = dateSrc[0];
+        startStr = dateStr.substring(1, 11);
+        endStr = dateStr.substring(12, 22);
+
+        // 如果时间是合理的
+        if (startStr < endStr || startStr === endStr) {
+            msg = data.substring(0, dateSrc.index) + data.substring(dateRegex.lastIndex, data.length + 1);
+            return [msg, success, isTd, dateStr.substring(1, dateStr.length - 1)];
+        }
+    }
+}
+
+function dateFormat(date) {
+    let year = date.getFullYear();
+    let month = date.getMonth() + 1 > 9 ? date.getMonth() + 1 : '0' + (date.getMonth() + 1);
+    let day = date.getDate() > 9 ? date.getDate() : '0' + date.getDate();
+    let separator = '.';
+    let dateStr = year + separator + month + separator + day;
+
+    return dateStr;
+}
+
+
+function checkDelay(dateStr) {
+    let endStr = dateStr.substring(dateStr.length / 2 + 1, dateStr.length);
+    let endY = parseInt(endStr.substr(0, 4));
+    let endM = parseInt(endStr.substr(5, 2));
+    let endD = parseInt(endStr.substr(8, 2));
+
+    console.log(endY, endM, endD);
+    let endDate = new Date(endY, endM - 1, endD);
+    let advanced_days_ago = new Date(endDate.getTime() - 24 * 60 * 60 * 1000 * 3);
+    let curDate = new Date();
+
+    let endDateStr = dateFormat(endDate);
+    let advanced_days_ago_Str = dateFormat(advanced_days_ago);
+    let curDateStr = dateFormat(curDate);
+
+    // 已过期
+    if (curDateStr > endDateStr) {
+        return -1;
+    }
+
+    // 安全
+    if (curDateStr < advanced_days_ago_Str) {
+        return -2;
+    }
+
+    // 剩不到3天，预警提醒
+    let remainingDay;
+    switch (curDateStr) {
+        case endDateStr:
+            remainingDay = 1;
+            break;
+        case advanced_days_ago_Str:
+            remainingDay = 3;
+            break;
+        default:
+            remainingDay = 2;
+            break;
+    }
+    return remainingDay;
+
 }
 
 function createItem(data, itemData, index) {
@@ -136,10 +280,12 @@ function createItem(data, itemData, index) {
 
     let itemCheckBtn = createItemCheckBtn();
     let itemContent = createItemContent();
+    let itemDate = createItemDate();
     let itemSwipeBtns = createItemSwipeBtns();
 
     item.appendChild(itemCheckBtn);
     item.appendChild(itemContent);
+    item.appendChild(itemDate);
     item.appendChild(itemSwipeBtns);
 
     addSwipeLeft();
@@ -164,6 +310,23 @@ function createItem(data, itemData, index) {
         itemContent.innerHTML = itemData.msg;
         itemContent.className = 'item-content';
         return itemContent;
+    }
+
+    function createItemDate() {
+        let itemDate = document.createElement('div');
+        itemDate.className = 'item-date';
+
+        if (!itemData.timeLimited) {
+            itemDate.innerHTML = '';
+        } else {
+            if (itemData.isTd) {
+                itemDate.innerHTML = 'Td';
+                itemDate.classList.add('td');
+            } else {
+                itemDate.innerHTML = itemData.dateStr;
+            }
+        }
+        return itemDate;
     }
 
     function createItemSwipeBtns() {
@@ -302,7 +465,7 @@ function createItem(data, itemData, index) {
         });
 
         // 长按后，如果触碰了其它位置（失焦），结束
-        function finish(){
+        function finish() {
             fullTextItem.removeChild(fullTextItem.lastChild);
             fullTextItem = null;
         }
@@ -317,12 +480,31 @@ function createItem(data, itemData, index) {
                 let fullText = fullTextItem.lastChild;
                 let tapFullText = x < fullText.getBoundingClientRect().right && x > fullText.getBoundingClientRect().left && y < fullText.getBoundingClientRect().bottom && y > fullText.getBoundingClientRect().top;
 
-                if (!tapFullText){
+                if (!tapFullText) {
                     finish();
                 }
             }
         });
     }
+}
+
+function sendWarningMsg() {
+    if (warningMsg === '') return;
+
+    ifttt(warningMsg, function () {
+        if (iftttSuccess) {
+            let data = model.data;
+            warningIndexList.forEach(function (index) {
+                data.items[index].alerted = true;
+            });
+            console.log(data);
+            warningMsg = '';
+            warningIndexList = [];
+        }
+        update();
+    });
+
+
 }
 
 window.onload = function () {

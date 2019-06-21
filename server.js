@@ -16,7 +16,7 @@ const server = http.createServer(function(req, res) {
   if (!jsonp) {
     // CORS
     res.setHeader('Access-Control-Allow-Origin', '*');
-    //res.setHeader('Access-Control-Allow-Methods', 'POST, GET');
+    res.setHeader('Access-Control-Allow-Methods', 'POST, GET');
   }
 
   if (pathname === '/' || pathname === '/init') {

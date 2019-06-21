@@ -46,6 +46,7 @@ h1 {
     border: rgba(175, 47, 47, 0.5) 0.2rem solid;
     background-color: white;
     border-radius: 100%;
+    left: 0.6rem;
 }
 
 .toggle-all.selected-all::after {
@@ -67,12 +68,25 @@ h1 {
     border: rgba(175, 47, 47, 0.2) 0.1rem solid;
     border-radius: 0.5rem;
     display: inline-block;
+    position: relative;
+    left: 0rem;
 }
 
 #new-todo::placeholder {
     font-style: italic;
     font-weight: 100;
     color: #e6e6e6;
+}
+
+.date-select {
+    display: inline-block;
+    position: relative;
+    width: 2.2rem;
+    height: 2.2rem;
+    vertical-align: sub;
+    background-image: url('./pic/date-select.png');
+    background-size: 100% 100%;
+    left: -0.1rem;
 }
 
 #add-btn {
@@ -86,6 +100,8 @@ h1 {
     vertical-align: bottom;
     text-align: center;
     display: inline-block;
+    position: relative;
+    left: -0.8rem;
 }
 
 /*** show-list ***/
@@ -190,11 +206,31 @@ h1 {
     line-height: 4rem;
     margin: 0.5rem 0;
     min-width: 16rem;
-    width: 60%;
+    width: 46%;
     text-align: left;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+}
+
+.item-date {
+    float: left;
+    height: 4rem;
+    width: 18%;
+    font-size: 1rem;
+    margin: 1.6rem 0;
+    color: #aaaaaa;
+    line-height: 1rem;
+    text-align: center;
+    word-wrap: break-word;
+    word-break: break-all;
+}
+
+.item-date.td{
+    font-size: 1.5rem;
+    line-height:1.5rem;
+    margin: 1.8rem 0;
+    color: #F15732;
 }
 
 .item-btns {
@@ -256,7 +292,7 @@ h1 {
     z-index: 100;
 }
 
-.item-all-content>div{
+.item-all-content > div {
     position: relative;
     top: 0.2rem;
     left: 1rem;

@@ -1,10 +1,10 @@
 window.model = {
-  data: {
-    items: [
-      // {msg:'', completed: false}
-    ],
-    msg: '',
-    filter: 'All'
-  },
-  TOKEN: 'TodoMVC'
+    data: {
+        items: [
+            // {msg:'', completed: false, timeLimited: false, alerted: false, isTd: '', dateStr: ''}
+        ],
+        msg: '',
+        filter: 'All'
+    },
+    TOKEN: 'TodoMVC'
 };
