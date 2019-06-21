@@ -18,6 +18,7 @@ let SELECTED = 'selected';
 let EDIT = 'edit';
 let SELECTED_ALL = 'selected-all';
 let expansion = null;
+let fullTextItem = null;
 
 function update() {
     // 更新服务器的数据
@@ -133,20 +134,17 @@ function createItem(data, itemData, index) {
     let id = 'item' + itemId++;
     item.setAttribute('id', id);
 
-    let itemCheckBtn = createItemCheckBtn(itemData);
-
-    let itemContent = document.createElement('div');
-    itemContent.innerHTML = itemData.msg;
-    itemContent.className = 'item-content';
-
-    let itemSwipeBtns = createItemSwipeBtns(data, itemData, index);
+    let itemCheckBtn = createItemCheckBtn();
+    let itemContent = createItemContent();
+    let itemSwipeBtns = createItemSwipeBtns();
 
     item.appendChild(itemCheckBtn);
     item.appendChild(itemContent);
     item.appendChild(itemSwipeBtns);
 
-    addSwipeLeft(item);
+    addSwipeLeft();
     createEdit();
+    createAllContent();
     return item;
 
     function createItemCheckBtn() {
@@ -161,6 +159,13 @@ function createItem(data, itemData, index) {
         return itemCheckBtn;
     }
 
+    function createItemContent() {
+        let itemContent = document.createElement('div');
+        itemContent.innerHTML = itemData.msg;
+        itemContent.className = 'item-content';
+        return itemContent;
+    }
+
     function createItemSwipeBtns() {
         let itemSwipeBtns = document.createElement('div');
         itemSwipeBtns.className = 'item-btns';
@@ -173,12 +178,12 @@ function createItem(data, itemData, index) {
         itemTopBtn.innerHTML = 'TOP';
         itemTopBtn.className = 'item-top';
 
-        itemDelBtn.addEventListener('click', function (event) {
+        itemDelBtn.addEventListener('click', function () {
             data.items.splice(index, 1);
             update();
         }, false);
 
-        itemTopBtn.addEventListener('click', function (event) {
+        itemTopBtn.addEventListener('click', function () {
             let top = data.items.splice(index, 1);
             data.items.push(top[0]);
             update();
@@ -259,6 +264,7 @@ function createItem(data, itemData, index) {
                 finish();
             }, false);
 
+            // 编辑完成
             edit.addEventListener('keyup', function (ev) {
                 if (ev.keyCode === 27) { // Esc
                     finish();
@@ -272,6 +278,49 @@ function createItem(data, itemData, index) {
 
             item.appendChild(edit);
             edit.focus();
+        });
+    }
+
+    // Hammer实现长按展示全部文字
+    function createAllContent() {
+        let hammerTest = new Hammer(itemContent);
+
+        // 长按后，展示全文文字
+        hammerTest.on('press', function (ev) {
+            console.log(ev.type);
+            let itemAllContent = document.createElement('div');
+            itemAllContent.className = 'item-all-content';
+            let allText = document.createElement('div');
+            allText.innerHTML = itemData.msg;
+            itemAllContent.appendChild(allText);
+            item.appendChild(itemAllContent);
+        });
+
+        // 抬起来时，记录展示全部文字的item
+        hammerTest.on('pressup', function (ev) {
+            fullTextItem = item;
+        });
+
+        // 长按后，如果触碰了其它位置（失焦），结束
+        function finish(){
+            fullTextItem.removeChild(fullTextItem.lastChild);
+            fullTextItem = null;
+        }
+
+        let x, y;
+        item.addEventListener('touchstart', function (event) {
+            x = event.changedTouches[0].pageX;
+            y = event.changedTouches[0].pageY;
+
+            // 如果有item是在长按模式下，预览所有文字的，但触摸的是其它地方，收起来
+            if (fullTextItem) {
+                let fullText = fullTextItem.lastChild;
+                let tapFullText = x < fullText.getBoundingClientRect().right && x > fullText.getBoundingClientRect().left && y < fullText.getBoundingClientRect().bottom && y > fullText.getBoundingClientRect().top;
+
+                if (!tapFullText){
+                    finish();
+                }
+            }
         });
     }
 }

@@ -159,6 +159,7 @@ h1 {
     box-shadow: 0 0.2rem 0.2rem rgba(0, 0, 0, 0.05);
     vertical-align: bottom;
     overflow: hidden;
+    z-index: 1;
 }
 
 .swipe-left {
@@ -192,7 +193,7 @@ h1 {
     width: 60%;
     text-align: left;
     overflow: hidden;
-    text-overflow:ellipsis;
+    text-overflow: ellipsis;
     white-space: nowrap;
 }
 
@@ -237,6 +238,36 @@ h1 {
 .todo-item.completed .item-content {
     text-decoration: line-through;
     color: #aaa;
+}
+
+.item-all-content {
+    position: absolute;
+    top: 5rem;
+    left: 4rem;
+    width: 60%;
+    max-height: 4rem;
+    margin: auto;
+
+    font-size: 1.4rem;
+    transform: translateX(0%) translateY(-100%);
+    color: white;
+    background-color: rgba(0, 0, 0, .7);
+    border-radius: 6px;
+    z-index: 100;
+}
+
+.item-all-content>div{
+    position: relative;
+    top: 0.2rem;
+    left: 1rem;
+    margin: 0;
+    width: 90%;
+    height: 4rem;
+    line-height: 1.4rem;
+    word-wrap: break-word;
+    word-break: break-all;
+    text-align: left;
+    overflow-y: auto;
 }
 
 /*** show-list ***/
