@@ -1,6 +1,7 @@
 let iftttUrl = 'https://maker.ifttt.com/trigger/todo_mvc/with/key/XO-fdhNWOJp4be7Dr_hQ3';
 let iftttSuccess = false;
 
+// 发送POST IFTTT请求
 function ifttt(warningMsg, callback) {
     iftttSuccess = false;
 

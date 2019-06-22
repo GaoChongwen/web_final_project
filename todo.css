@@ -69,7 +69,7 @@ h1 {
     border-radius: 0.5rem;
     display: inline-block;
     position: relative;
-    left: 0rem;
+    left: 0;
 }
 
 #new-todo::placeholder {
@@ -79,10 +79,10 @@ h1 {
 }
 
 .date-select {
-    display: inline-block;
-    position: relative;
     width: 2.2rem;
     height: 2.2rem;
+    display: inline-block;
+    position: relative;
     vertical-align: sub;
     background-image: url('./pic/date-select.png');
     background-size: 100% 100%;
@@ -118,7 +118,7 @@ h1 {
     0 1.7rem 0.2rem -0.6rem rgba(0, 0, 0, 0.2);
 }
 
-/*show-bar*/
+/* show-bar */
 #show-bar {
     color: #777;
     text-align: center;
@@ -178,11 +178,6 @@ h1 {
     z-index: 1;
 }
 
-.swipe-left {
-    transform: translateX(-106%);
-    -webkit-transform: translateX(-106%);
-}
-
 .item-toggle {
     width: 2rem;
     height: 2rem;
@@ -233,6 +228,12 @@ h1 {
     color: #F15732;
 }
 
+/**** item-btns-swipe-left  ****/
+.swipe-left {
+    transform: translateX(-106%);
+    -webkit-transform: translateX(-106%);
+}
+
 .item-btns {
     float: right;
     width: 22%;
@@ -258,6 +259,7 @@ h1 {
     background: #c5c0c0;
 }
 
+/**** edit  ****/
 .todo-item .edit {
     font-size: 2rem;
     position: absolute;
@@ -276,6 +278,7 @@ h1 {
     color: #aaa;
 }
 
+/**** item-longTap  ****/
 .item-all-content {
     position: absolute;
     top: 4rem;
@@ -306,7 +309,7 @@ h1 {
     overflow-y: auto;
 }
 
-/*** show-list ***/
+/*************  footer ***************/
 #clear-btn {
     color: #777;
     margin: 2rem;
@@ -317,7 +320,7 @@ h1 {
     border-radius: 0.5rem;
 }
 
-/**************** calender ************************/
+/******************* calender ************************/
 .calender {
     width: 32.4rem;
     height: 22rem;
@@ -332,6 +335,7 @@ h1 {
     box-sizing: border-box;
 }
 
+/**** year-month-bar  ****/
 .year-month-bar {
     margin-bottom: 2rem;
     font-size: 2rem;
@@ -342,14 +346,35 @@ h1 {
     vertical-align: bottom;
 }
 
-.year-month {
-    width: 100%;
+.lastMBtn, .nextMBtn {
+    width: 2.2rem;
+    height: 2.2rem;
+    font-size: 2.2rem;
+    position: absolute;
+    top: 0;
 }
 
+.lastMBtn {
+    left: 1.5rem;
+}
+
+.nextMBtn {
+    right: 1.5rem;
+}
+
+/**** week-bar  ****/
 .week-bar, .days {
     margin-left: 1rem;
 }
 
+.week {
+    cursor: default;
+    color: #aaa;
+    font-size: 1.2rem;
+    text-transform: uppercase;
+}
+
+/**** days  ****/
 .day, .week {
     cursor: pointer;
     width: 4rem;
@@ -368,35 +393,11 @@ h1 {
     font-size: 1.6rem;
 }
 
-
-.lastMBtn, .nextMBtn {
-    width: 2.2rem;
-    height: 2.2rem;
-    font-size: 2.2rem;
-    position: absolute;
-    top: 0;
-}
-
-.lastMBtn {
-    left: 1.5rem;
-}
-
-.nextMBtn {
-    right: 1.5rem;
-}
-
-.week {
-    cursor: default;
-    color: #aaa;
-    font-size: 1.2rem;
-    text-transform: uppercase;
-}
-
 .not {
     color: #ccc;
 }
 
-
+/**** day-detail  ****/
 .day-detail {
     position: absolute;
     padding: 0.5rem 0;

@@ -33,6 +33,7 @@ let toggleColorMap = new Map();
 function update() {
     // 更新服务器的数据
     model.flush();
+
     // 获取全局变量model中的数据
     let data = model.data;
 
@@ -40,23 +41,18 @@ function update() {
     let activeCount = 0;
     let calenderTaskNum = 0;
 
-    // 全局变量清零；
-    calenderMaxTaskNum = 0;
-    dateTaskMap.clear();
-    toggleColorMap.clear();
-
-    // todoList清空
+    // 获取todoList组件
     let todoList = $('#todo-list');
-    todoList.innerHTML = '';
 
-    // 日历重新建立
-    initCalender(calenderDate);
+    // 重置全局变量
+    resetGlobal();
 
     data.items.forEach(function (itemData, index) {
         if (!itemData.completed) activeCount++;
 
         // 如果未完成，且有时间限制，且并未提醒过，IFTTT
         if (!itemData.completed && itemData.timeLimited && !itemData.alerted) {
+            // 检查是否延误
             let remainingDay = checkDelay(itemData.dateStr);
 
             // 需要预警
@@ -132,191 +128,66 @@ function update() {
 
     // 更新日历的背景图，展示
     updateCalenderBg();
-}
 
-function initUI(data) {
-    let newTodo = $('#new-todo');
-    let addBtn = $('#add-btn');
-    let clearCompleted = $('#clear-btn');
-    let toggleAll = $('.toggle-all');
-    let filters = makeArray($All('.filters li a'));
+    function checkDelay(dateStr) {
+        let endStr = dateStr.substring(dateStr.length / 2 + 1, dateStr.length);
+        let endY = parseInt(endStr.substr(0, 4));
+        let endM = parseInt(endStr.substr(5, 2));
+        let endD = parseInt(endStr.substr(8, 2));
 
-    let lastMonBtn = $('.lastMBtn');
-    let nextMonBtn = $('.nextMBtn');
+        let endDate = new Date(endY, endM - 1, endD);
+        let advanced_days_ago = new Date(endDate.getTime() - 24 * 60 * 60 * 1000 * ADVANCED_DAY);
+        let curDate = new Date();
 
-    // newTodo
-    newTodo.addEventListener('keyup', function () {
-        data.msg = newTodo.value;
-    });
+        let endDateStr = dateFormat(endDate);
+        let advanced_days_ago_Str = dateFormat(advanced_days_ago);
+        let curDateStr = dateFormat(curDate);
 
-    newTodo.addEventListener('change', function () {
-        model.flush();
-    });
-
-    newTodo.addEventListener('keyup', function (ev) {
-        if (ev.keyCode !== 13) return; // Enter
-        addItem();
-    }, false);
-
-    // addBtn
-    addBtn.addEventListener('click', addItem, false);
-
-    // clearCompleted 改成从后向前删除，避免删除影响顺序
-    clearCompleted.addEventListener('click', function () {
-        for (let i = data.items.length - 1; i >= 0; i--) {
-            if (data.items[i].completed) data.items.splice(i, 1);
-        }
-        update();
-    }, false);
-
-    // toggleAll
-    toggleAll.addEventListener('click', function () {
-        if (toggleAll.classList.contains(SELECTED_ALL)) {
-            toggleAll.classList.remove(SELECTED_ALL);
-            data.items.forEach(function (itemData) {
-                itemData.completed = false;
-            });
-        } else {
-            toggleAll.classList.add(SELECTED_ALL);
-            data.items.forEach(function (itemData) {
-                itemData.completed = true;
-            });
-        }
-        update();
-    }, false);
-
-    // filters
-    filters.forEach(function (filter) {
-        filter.addEventListener('click', function () {
-            data.filter = filter.innerHTML;
-            filters.forEach(function (filter) {
-                filter.classList.remove(SELECTED);
-            });
-            filter.classList.add(SELECTED);
-            update();
-        }, false);
-    });
-
-    // lastMonBtn
-    lastMonBtn.addEventListener('click', function () {
-        calenderDate.setMonth(calenderDate.getMonth() - 1);
-        initCalender(calenderDate);
-
-        update();
-    }, false);
-
-    // nextMBtn
-    nextMonBtn.addEventListener('click', function () {
-        calenderDate.setMonth(calenderDate.getMonth() + 1);
-        initCalender(calenderDate);
-
-        update();
-    }, false);
-
-    function addItem() {
-        if (data.msg === '') {
-            console.warn('input msg is empty');
-            return;
+        // 已过期
+        if (curDateStr > endDateStr) {
+            return -1;
         }
 
-        let [_msg, _success, _isTd, _dateStr] = getDate(data.msg);
-        // data.items.push({msg: msg, completed: false});
-        data.items.push({
-            msg: _msg,
-            completed: false,
-            timeLimited: _success,
-            alerted: false,
-            isTd: _isTd,
-            dateStr: _dateStr
-        });
-
-        data.msg = '';
-        update();
-
-        function getDate(data) {
-            let msg = data;
-            let success = false, isTd = false;
-            let dateStr = '', startStr = '', endStr = '';
-
-            // 进行正则匹配
-            let dateSrc = dateRegex.exec(data);
-            let tdSrc = tdRegex.exec(data);
-
-            // 均匹配失败，默认为无时间，不处理msg
-            if (!dateSrc && !tdSrc) {
-                return [msg, success, isTd, dateStr];
-            } else {
-                success = true;
-            }
-
-            // (td)匹配成功，处理为今天
-            if (tdSrc) {
-                // 获取当前日期
-                let date = new Date();
-
-                msg = data.substring(0, tdSrc.index) + data.substring(tdRegex.lastIndex, data.length + 1);
-                isTd = true;
-                dateStr = dateFormat(date) + '-' + dateFormat(date);
-                return [msg, success, isTd, dateStr];
-            }
-
-            // (yyyy.mm.dd-yyyy.mm.dd)匹配成功，处理时间
-            if (dateSrc) {
-                dateStr = dateSrc[0];
-                startStr = dateStr.substring(1, 11);
-                endStr = dateStr.substring(12, 22);
-
-                // 如果时间是合理的
-                if (startStr < endStr || startStr === endStr) {
-                    msg = data.substring(0, dateSrc.index) + data.substring(dateRegex.lastIndex, data.length + 1);
-                    return [msg, success, isTd, dateStr.substring(1, dateStr.length - 1)];
-                }
-            }
+        // 安全
+        if (curDateStr < advanced_days_ago_Str) {
+            return -2;
         }
+
+        // 剩不到3天，预警提醒
+        let remainingDay;
+        switch (curDateStr) {
+            case endDateStr:
+                remainingDay = 1;
+                break;
+            case advanced_days_ago_Str:
+                remainingDay = 3;
+                break;
+            default:
+                remainingDay = 2;
+                break;
+        }
+        return remainingDay;
+
     }
-}
-
-function checkDelay(dateStr) {
-    let endStr = dateStr.substring(dateStr.length / 2 + 1, dateStr.length);
-    let endY = parseInt(endStr.substr(0, 4));
-    let endM = parseInt(endStr.substr(5, 2));
-    let endD = parseInt(endStr.substr(8, 2));
-
-    let endDate = new Date(endY, endM - 1, endD);
-    let advanced_days_ago = new Date(endDate.getTime() - 24 * 60 * 60 * 1000 * ADVANCED_DAY);
-    let curDate = new Date();
-
-    let endDateStr = dateFormat(endDate);
-    let advanced_days_ago_Str = dateFormat(advanced_days_ago);
-    let curDateStr = dateFormat(curDate);
-
-    // 已过期
-    if (curDateStr > endDateStr) {
-        return -1;
-    }
-
-    // 安全
-    if (curDateStr < advanced_days_ago_Str) {
-        return -2;
-    }
-
-    // 剩不到3天，预警提醒
-    let remainingDay;
-    switch (curDateStr) {
-        case endDateStr:
-            remainingDay = 1;
-            break;
-        case advanced_days_ago_Str:
-            remainingDay = 3;
-            break;
-        default:
-            remainingDay = 2;
-            break;
-    }
-    return remainingDay;
 
 }
 
+// 重置全局变量
+function resetGlobal() {
+    // 全局变量清零；
+    calenderMaxTaskNum = 0;
+    dateTaskMap.clear();
+    toggleColorMap.clear();
+
+    // todoList清空
+    let todoList = $('#todo-list');
+    todoList.innerHTML = '';
+
+    // 日历重新建立
+    initCalender(calenderDate);
+}
+
+// 创建item
 function createItem(data, itemData, index) {
     let item = document.createElement('div');
     item.className = 'todo-item';
@@ -550,6 +421,7 @@ function createItem(data, itemData, index) {
     }
 }
 
+// 预警
 function sendWarningMsg() {
     if (warningMsg === '') return;
 
@@ -566,11 +438,12 @@ function sendWarningMsg() {
     });
 }
 
+// 更新日历的背景图，展示
 function updateCalenderBg() {
     let colorStep = 100 / calenderMaxTaskNum;
     for (let [key, value] of dateTaskMap) {
         let dayId = key > 9 ? 'd' + key : 'd0' + key;
-        let dayDiv = $( '#' + dayId);
+        let dayDiv = $('#' + dayId);
 
         let bgImgText = '';
 
@@ -632,7 +505,151 @@ function updateCalenderBg() {
     }
 }
 
-function checkTd(data) {
+// 初始化UI
+function initUI(data) {
+    let newTodo = $('#new-todo');
+    let addBtn = $('#add-btn');
+    let clearCompleted = $('#clear-btn');
+    let toggleAll = $('.toggle-all');
+    let filters = makeArray($All('.filters li a'));
+
+    let lastMonBtn = $('.lastMBtn');
+    let nextMonBtn = $('.nextMBtn');
+
+    // newTodo
+    newTodo.addEventListener('keyup', function () {
+        data.msg = newTodo.value;
+    });
+
+    newTodo.addEventListener('change', function () {
+        model.flush();
+    });
+
+    newTodo.addEventListener('keyup', function (ev) {
+        if (ev.keyCode !== 13) return; // Enter
+        addItem();
+    }, false);
+
+    // addBtn
+    addBtn.addEventListener('click', addItem, false);
+
+    // clearCompleted 改成从后向前删除，避免删除影响顺序
+    clearCompleted.addEventListener('click', function () {
+        for (let i = data.items.length - 1; i >= 0; i--) {
+            if (data.items[i].completed) data.items.splice(i, 1);
+        }
+        update();
+    }, false);
+
+    // toggleAll
+    toggleAll.addEventListener('click', function () {
+        if (toggleAll.classList.contains(SELECTED_ALL)) {
+            toggleAll.classList.remove(SELECTED_ALL);
+            data.items.forEach(function (itemData) {
+                itemData.completed = false;
+            });
+        } else {
+            toggleAll.classList.add(SELECTED_ALL);
+            data.items.forEach(function (itemData) {
+                itemData.completed = true;
+            });
+        }
+        update();
+    }, false);
+
+    // filters
+    filters.forEach(function (filter) {
+        filter.addEventListener('click', function () {
+            data.filter = filter.innerHTML;
+            filters.forEach(function (filter) {
+                filter.classList.remove(SELECTED);
+            });
+            filter.classList.add(SELECTED);
+            update();
+        }, false);
+    });
+
+    // lastMonBtn
+    lastMonBtn.addEventListener('click', function () {
+        calenderDate.setMonth(calenderDate.getMonth() - 1);
+        initCalender(calenderDate);
+
+        update();
+    }, false);
+
+    // nextMBtn
+    nextMonBtn.addEventListener('click', function () {
+        calenderDate.setMonth(calenderDate.getMonth() + 1);
+        initCalender(calenderDate);
+
+        update();
+    }, false);
+
+    function addItem() {
+        if (data.msg === '') {
+            console.warn('input msg is empty');
+            return;
+        }
+
+        let [_msg, _success, _isTd, _dateStr] = getDate(data.msg);
+        // data.items.push({msg: msg, completed: false});
+        data.items.push({
+            msg: _msg,
+            completed: false,
+            timeLimited: _success,
+            alerted: false,
+            isTd: _isTd,
+            dateStr: _dateStr
+        });
+
+        data.msg = '';
+        update();
+
+        function getDate(data) {
+            let msg = data;
+            let success = false, isTd = false;
+            let dateStr = '', startStr = '', endStr = '';
+
+            // 进行正则匹配
+            let dateSrc = dateRegex.exec(data);
+            let tdSrc = tdRegex.exec(data);
+
+            // 均匹配失败，默认为无时间，不处理msg
+            if (!dateSrc && !tdSrc) {
+                return [msg, success, isTd, dateStr];
+            } else {
+                success = true;
+            }
+
+            // (td)匹配成功，处理为今天
+            if (tdSrc) {
+                // 获取当前日期
+                let date = new Date();
+
+                msg = data.substring(0, tdSrc.index) + data.substring(tdRegex.lastIndex, data.length + 1);
+                isTd = true;
+                dateStr = dateFormat(date) + '-' + dateFormat(date);
+                return [msg, success, isTd, dateStr];
+            }
+
+            // (yyyy.mm.dd-yyyy.mm.dd)匹配成功，处理时间
+            if (dateSrc) {
+                dateStr = dateSrc[0];
+                startStr = dateStr.substring(1, 11);
+                endStr = dateStr.substring(12, 22);
+
+                // 如果时间是合理的
+                if (startStr < endStr || startStr === endStr) {
+                    msg = data.substring(0, dateSrc.index) + data.substring(dateRegex.lastIndex, data.length + 1);
+                    return [msg, success, isTd, dateStr.substring(1, dateStr.length - 1)];
+                }
+            }
+        }
+    }
+}
+
+// 更新"Td"标签
+function updateTd(data) {
     data.items.forEach(function (itemData) {
         if (itemData.isTd) {
             let itemTd = itemData.dateStr.substring(itemData.dateStr.length / 2 + 1, itemData.dateStr.length);
@@ -648,7 +665,7 @@ window.onload = function () {
 
         initUI(data);
 
-        checkTd(data);
+        updateTd(data);
 
         update();
     });
