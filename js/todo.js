@@ -11,9 +11,6 @@ let fullTextItem = null;
 // 记录已打开的dayDetail
 let expansionDay = null;
 
-// 日期正则匹配
-const dateRegex = /\(\d{4}\.[0-1]\d\.[0-3]\d-\d{4}\.[0-1]\d\.[0-3]\d\)/g;
-const tdRegex = /\(td\)/g;
 
 // ifttt 最晚时间点
 const ADVANCED_DAY = 3;
@@ -22,7 +19,7 @@ let warningIndexList = [];
 
 // 日历
 // const calenderColor = [ '#EFCF68',  '#88C966', '#EEA95E', '#7FC0F1','#CC95E2','#EF7164', '#A5A5A7'];
-const calenderColor = ['#FFD7D1', '#E8BEC0', '#FEDCEE', '#E7BEE8', '#F2D1FF'];
+const calenderColor = ['#FFD7D1', '#E8BEC0', '#FEDCEE', '#E7BEE8', '#F2D1FF', '#FFFAC7', '#E8DFB5', '#FFF3D4', '#E8D4B5', '#FFE2C7', '#C9FFED', '#B7E8CA', '#D6FFDA', '#C2E8B7', '#E8FFC9'];
 let calenderDate = new Date();
 let dateTaskMap = new Map();
 let calenderMaxTaskNum = 0;
@@ -476,6 +473,11 @@ function updateCalenderBg() {
                 expansionDay = null;
             }
 
+            let detailItem = document.createElement('div');
+            detailItem.className = "detail-item";
+            detailItem.innerHTML = yearDom.innerHTML + " " + monthDom.innerHTML + " " + dayDiv.innerHTML;
+            dayDetail.appendChild(detailItem);
+
             value.forEach(function (val) {
                 let detailItem = document.createElement('div');
                 detailItem.className = "detail-item";
@@ -609,6 +611,10 @@ function initUI(data) {
             let msg = data;
             let success = false, isTd = false;
             let dateStr = '', startStr = '', endStr = '';
+
+            // 日期正则匹配
+            let dateRegex = /\(\d{4}\.[0-1]\d\.[0-3]\d-\d{4}\.[0-1]\d\.[0-3]\d\)/g;
+            let tdRegex = /\(td\)/g;
 
             // 进行正则匹配
             let dateSrc = dateRegex.exec(data);

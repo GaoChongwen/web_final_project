@@ -84,7 +84,7 @@ h1 {
     display: inline-block;
     position: relative;
     vertical-align: sub;
-    background-image: url('./pic/date-select.png');
+    background-image: url('../pic/date-select.png');
     background-size: 100% 100%;
     left: -0.1rem;
 }
@@ -200,7 +200,7 @@ h1 {
     height: 4rem;
     line-height: 4rem;
     margin: 0.5rem 0;
-    min-width: 16rem;
+    min-width: 15.5rem;
     width: 46%;
     text-align: left;
     overflow: hidden;
@@ -265,9 +265,10 @@ h1 {
     position: absolute;
     top: 0.3rem;
     left: 3.9rem;
+    height: 3rem;
     display: inline-block;
-    line-height: 3.9rem;
-    width: 60%;
+    line-height: 3.4rem;
+    width: 46%;
     text-align: left;
     vertical-align: baseline;
     z-index: 100;
