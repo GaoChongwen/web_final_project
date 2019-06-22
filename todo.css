@@ -19,7 +19,7 @@ body {
 h1 {
     width: 100%;
     padding: 0;
-    margin-bottom: 1.5rem;
+    margin-bottom: 0.5rem;
     font-size: 3rem;
     text-align: center;
     text-transform: uppercase;
@@ -29,7 +29,7 @@ h1 {
 
 /*************  section-main ***************/
 .main {
-    width: 90%;
+    width: 32.4rem;
     position: relative;
     margin: auto;
     z-index: 2;
@@ -108,7 +108,7 @@ h1 {
 #show-list {
     width: 80%;
     background: #FFF;
-    font-size: 2rem;
+    font-size: 1.8rem;
     margin: 1.5rem auto auto;
     padding: 0.5em 1em;
     box-shadow: 0 0.1rem 0.1rem rgba(0, 0, 0, 0.2),
@@ -131,7 +131,7 @@ h1 {
 }
 
 .filters {
-    margin: 0 0 0 5rem;
+    margin: 0 0 0 7.5rem;
     padding: 0;
     list-style: none;
     position: absolute;
@@ -144,8 +144,8 @@ h1 {
 }
 
 .filters li a {
-    margin: 0.3rem 0.1rem;
-    padding: 0.3rem 0.5rem;
+    margin: 0.2rem 0.1rem;
+    padding: 0 0.5rem;
     text-decoration: none;
     border: 0.1rem solid transparent;
     border-radius: 0.3rem;
@@ -159,7 +159,7 @@ h1 {
 #todo-list {
     display: block;
     width: 100%;
-    max-height: 25rem;
+    max-height: 20rem;
     margin: auto;
     overflow-y: scroll;
     overflow-x: hidden;
@@ -169,8 +169,8 @@ h1 {
 .todo-item {
     position: relative;
     width: 130%;
-    height: 5rem;
-    line-height: 5rem;
+    height: 4rem;
+    line-height: 4rem;
     margin: auto;
     box-shadow: 0 0.2rem 0.2rem rgba(0, 0, 0, 0.05);
     vertical-align: bottom;
@@ -226,9 +226,9 @@ h1 {
     word-break: break-all;
 }
 
-.item-date.td{
+.item-date.td {
     font-size: 1.5rem;
-    line-height:1.5rem;
+    line-height: 1.5rem;
     margin: 1.8rem 0;
     color: #F15732;
 }
@@ -278,7 +278,7 @@ h1 {
 
 .item-all-content {
     position: absolute;
-    top: 5rem;
+    top: 4rem;
     left: 4rem;
     width: 60%;
     max-height: 4rem;
@@ -295,9 +295,9 @@ h1 {
 .item-all-content > div {
     position: relative;
     top: 0.2rem;
-    left: 1rem;
+    left: 0.8rem;
     margin: 0;
-    width: 90%;
+    width: 19rem;
     height: 4rem;
     line-height: 1.4rem;
     word-wrap: break-word;
@@ -315,4 +315,118 @@ h1 {
     background: rgba(177, 107, 107, 0.1);
     border: 0.1rem solid rgba(175, 47, 47, 0.3);
     border-radius: 0.5rem;
+}
+
+/**************** calender ************************/
+.calender {
+    width: 32.4rem;
+    height: 22rem;
+    position: relative;
+    margin: auto;
+    border-radius: 3rem;
+    font-family: 'Arimo', sans-serif;
+    font-size: 1.5rem;
+    line-height: 2rem;
+    color: #999;
+    text-align: center;
+    box-sizing: border-box;
+}
+
+.year-month-bar {
+    margin-bottom: 2rem;
+    font-size: 2rem;
+}
+
+.year-month-bar > div {
+    display: inline-block;
+    vertical-align: bottom;
+}
+
+.year-month {
+    width: 100%;
+}
+
+.week-bar, .days {
+    margin-left: 1rem;
+}
+
+.day, .week {
+    cursor: pointer;
+    width: 4rem;
+    height: 2.5rem;
+    margin: 0 0rem;
+    display: inline-block;
+    float: left;
+    border-bottom: #e6c6c6 0.08rem solid;
+    z-index: 2;
+}
+
+.day.highlight {
+    color: #F15732;
+    font-family: 'Comic Sans MS', "Microsoft YaHei", sans-serif;
+    font-weight: bold;
+    font-size: 1.6rem;
+}
+
+
+.lastMBtn, .nextMBtn {
+    width: 2.2rem;
+    height: 2.2rem;
+    font-size: 2.2rem;
+    position: absolute;
+    top: 0;
+}
+
+.lastMBtn {
+    left: 1.5rem;
+}
+
+.nextMBtn {
+    right: 1.5rem;
+}
+
+.week {
+    cursor: default;
+    color: #aaa;
+    font-size: 1.2rem;
+    text-transform: uppercase;
+}
+
+.not {
+    color: #ccc;
+}
+
+
+.day-detail {
+    position: absolute;
+    padding: 0.5rem 0;
+    width: 24rem;
+    top: 8rem;
+    left: 3rem;
+    height: 11rem;
+    background-color: rgba(0, 0, 0, 0.5);
+    border-radius: 0.6rem;
+    color: #edecec;
+    overflow-y: scroll;
+    z-index: 100;
+}
+
+.detail-item {
+    z-index: 200;
+}
+
+.detail-item div {
+    display: inline-block;
+    height: 1.4rem;
+}
+
+.tag {
+    position: relative;
+    width: 1.4rem;
+    border-radius: 100%;
+    left: -3rem;
+}
+
+.msg {
+    width: 10rem;
 }

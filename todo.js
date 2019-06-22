@@ -1,26 +1,15 @@
-let $ = function (sel) {
-    return document.querySelector(sel);
-};
-let $All = function (sel) {
-    return document.querySelectorAll(sel);
-};
-let makeArray = function (likeArray) {
-    let array = [];
-    for (let i = 0; i < likeArray.length; ++i) {
-        array.push(likeArray[i]);
-    }
-    return array;
-};
-
 let itemId = 0;
 let COMPLETED = 'completed';
 let SELECTED = 'selected';
 let EDIT = 'edit';
 let SELECTED_ALL = 'selected-all';
 
-// 记录已右滑显示的item与已长按显示的item
-let expansion = null;
+// 记录已右滑显示的item
+let expansionItem = null;
+// 记录已长按显示的item
 let fullTextItem = null;
+// 记录已打开的dayDetail
+let expansionDay = null;
 
 // 日期正则匹配
 const dateRegex = /\(\d{4}\.[0-1]\d\.[0-3]\d-\d{4}\.[0-1]\d\.[0-3]\d\)/g;
@@ -31,21 +20,43 @@ const ADVANCED_DAY = 3;
 let warningMsg = '';
 let warningIndexList = [];
 
+// 日历
+// const calenderColor = [ '#EFCF68',  '#88C966', '#EEA95E', '#7FC0F1','#CC95E2','#EF7164', '#A5A5A7'];
+const calenderColor = ['#FFD7D1', '#E8BEC0', '#FEDCEE', '#E7BEE8', '#F2D1FF'];
+let calenderDate = new Date();
+let dateTaskMap = new Map();
+let calenderMaxTaskNum = 0;
+
+// toggle标签颜色记录
+let toggleColorMap = new Map();
+
 function update() {
     // 更新服务器的数据
     model.flush();
     // 获取全局变量model中的数据
     let data = model.data;
+
+    // 未完成的数目与日历显示的任务数目
     let activeCount = 0;
+    let calenderTaskNum = 0;
+
+    // 全局变量清零；
+    calenderMaxTaskNum = 0;
+    dateTaskMap.clear();
+    toggleColorMap.clear();
+
+    // todoList清空
     let todoList = $('#todo-list');
     todoList.innerHTML = '';
+
+    // 日历重新建立
+    initCalender(calenderDate);
 
     data.items.forEach(function (itemData, index) {
         if (!itemData.completed) activeCount++;
 
-        // 如果未完成，且有时间限制，且并未提醒过
+        // 如果未完成，且有时间限制，且并未提醒过，IFTTT
         if (!itemData.completed && itemData.timeLimited && !itemData.alerted) {
-            console.log(itemData);
             let remainingDay = checkDelay(itemData.dateStr);
 
             // 需要预警
@@ -65,11 +76,38 @@ function update() {
             }
         }
 
+        // 日历的任务管理条，管理：有时间限制，且不是一天做完的任务
+        if (itemData.timeLimited && !itemData.isTd) {
+            // 如果时间限制在当前日历显示的月份有重合
+            let result = dateInTheMonth(itemData.dateStr, calenderDate);
+            if (result) {
+                // 获得重合的起止日期
+                let [startDateId, endDateId] = result;
+                for (let i = startDateId; i < endDateId + 1; i++) {
+                    if (dateTaskMap.has(i)) {
+                        let value = dateTaskMap.get(i);
+                        value.push({"msg": itemData.msg, "taskIndex": calenderTaskNum});
+                        dateTaskMap.set(i, value);
+                    } else {
+                        dateTaskMap.set(i, [{"msg": itemData.msg, "taskIndex": calenderTaskNum}]);
+                    }
+
+                    // 更新最大值
+                    let value = dateTaskMap.get(i);
+                    if (value.length > calenderMaxTaskNum) calenderMaxTaskNum = value.length;
+                }
+                // 设置toggle标签颜色
+                toggleColorMap.set(index, calenderTaskNum);
+                calenderTaskNum++;
+            }
+        }
+
         // 过滤
         if (
             data.filter === 'All'
             || (data.filter === 'Active' && !itemData.completed)
             || (data.filter === 'Completed' && itemData.completed)
+            || (data.filter === 'Td' && itemData.isTd)
         ) {
             let item = createItem(data, itemData, index);
             todoList.insertBefore(item, todoList.firstChild);
@@ -91,7 +129,9 @@ function update() {
 
     // 预警
     sendWarningMsg();
-    console.log(data);
+
+    // 更新日历的背景图，展示
+    updateCalenderBg();
 }
 
 function initUI(data) {
@@ -100,6 +140,9 @@ function initUI(data) {
     let clearCompleted = $('#clear-btn');
     let toggleAll = $('.toggle-all');
     let filters = makeArray($All('.filters li a'));
+
+    let lastMonBtn = $('.lastMBtn');
+    let nextMonBtn = $('.nextMBtn');
 
     // newTodo
     newTodo.addEventListener('keyup', function () {
@@ -142,6 +185,7 @@ function initUI(data) {
         update();
     }, false);
 
+    // filters
     filters.forEach(function (filter) {
         filter.addEventListener('click', function () {
             data.filter = filter.innerHTML;
@@ -152,6 +196,22 @@ function initUI(data) {
             update();
         }, false);
     });
+
+    // lastMonBtn
+    lastMonBtn.addEventListener('click', function () {
+        calenderDate.setMonth(calenderDate.getMonth() - 1);
+        initCalender(calenderDate);
+
+        update();
+    }, false);
+
+    // nextMBtn
+    nextMonBtn.addEventListener('click', function () {
+        calenderDate.setMonth(calenderDate.getMonth() + 1);
+        initCalender(calenderDate);
+
+        update();
+    }, false);
 
     function addItem() {
         if (data.msg === '') {
@@ -172,61 +232,49 @@ function initUI(data) {
 
         data.msg = '';
         update();
-    }
-}
 
-function getDate(data) {
-    let msg = data;
-    // let yStart = null, mStart = null, dStart = null, yEnd = null, mEnd = null,
-    //     dEnd = null;
-    let success = false, isTd = false;
-    let dateStr = '', startStr = '', endStr = '';
+        function getDate(data) {
+            let msg = data;
+            let success = false, isTd = false;
+            let dateStr = '', startStr = '', endStr = '';
 
-    let dateSrc = dateRegex.exec(data);
-    let tdSrc = tdRegex.exec(data);
+            // 进行正则匹配
+            let dateSrc = dateRegex.exec(data);
+            let tdSrc = tdRegex.exec(data);
 
-    // 均匹配失败，默认为无时间，不处理msg
-    if (!dateSrc && !tdSrc) {
-        return [msg, success, isTd, dateStr];
-    } else {
-        success = true;
-    }
+            // 均匹配失败，默认为无时间，不处理msg
+            if (!dateSrc && !tdSrc) {
+                return [msg, success, isTd, dateStr];
+            } else {
+                success = true;
+            }
 
-    // (td)匹配成功，处理为今天
-    if (tdSrc) {
-        // 获取当前日期
-        let date = new Date();
+            // (td)匹配成功，处理为今天
+            if (tdSrc) {
+                // 获取当前日期
+                let date = new Date();
 
-        msg = data.substring(0, tdSrc.index) + data.substring(tdRegex.lastIndex, data.length + 1);
-        isTd = true;
-        dateStr = dateFormat(date) + '-' + dateFormat(date);
-        return [msg, success, isTd, dateStr];
-    }
+                msg = data.substring(0, tdSrc.index) + data.substring(tdRegex.lastIndex, data.length + 1);
+                isTd = true;
+                dateStr = dateFormat(date) + '-' + dateFormat(date);
+                return [msg, success, isTd, dateStr];
+            }
 
-    // (yyyy.mm.dd-yyyy.mm.dd)匹配成功，处理时间
-    if (dateSrc) {
-        dateStr = dateSrc[0];
-        startStr = dateStr.substring(1, 11);
-        endStr = dateStr.substring(12, 22);
+            // (yyyy.mm.dd-yyyy.mm.dd)匹配成功，处理时间
+            if (dateSrc) {
+                dateStr = dateSrc[0];
+                startStr = dateStr.substring(1, 11);
+                endStr = dateStr.substring(12, 22);
 
-        // 如果时间是合理的
-        if (startStr < endStr || startStr === endStr) {
-            msg = data.substring(0, dateSrc.index) + data.substring(dateRegex.lastIndex, data.length + 1);
-            return [msg, success, isTd, dateStr.substring(1, dateStr.length - 1)];
+                // 如果时间是合理的
+                if (startStr < endStr || startStr === endStr) {
+                    msg = data.substring(0, dateSrc.index) + data.substring(dateRegex.lastIndex, data.length + 1);
+                    return [msg, success, isTd, dateStr.substring(1, dateStr.length - 1)];
+                }
+            }
         }
     }
 }
-
-function dateFormat(date) {
-    let year = date.getFullYear();
-    let month = date.getMonth() + 1 > 9 ? date.getMonth() + 1 : '0' + (date.getMonth() + 1);
-    let day = date.getDate() > 9 ? date.getDate() : '0' + date.getDate();
-    let separator = '.';
-    let dateStr = year + separator + month + separator + day;
-
-    return dateStr;
-}
-
 
 function checkDelay(dateStr) {
     let endStr = dateStr.substring(dateStr.length / 2 + 1, dateStr.length);
@@ -234,9 +282,8 @@ function checkDelay(dateStr) {
     let endM = parseInt(endStr.substr(5, 2));
     let endD = parseInt(endStr.substr(8, 2));
 
-    console.log(endY, endM, endD);
     let endDate = new Date(endY, endM - 1, endD);
-    let advanced_days_ago = new Date(endDate.getTime() - 24 * 60 * 60 * 1000 * 3);
+    let advanced_days_ago = new Date(endDate.getTime() - 24 * 60 * 60 * 1000 * ADVANCED_DAY);
     let curDate = new Date();
 
     let endDateStr = dateFormat(endDate);
@@ -278,12 +325,17 @@ function createItem(data, itemData, index) {
     let id = 'item' + itemId++;
     item.setAttribute('id', id);
 
-    let itemCheckBtn = createItemCheckBtn();
+    let itemToggle = createItemToggle();
     let itemContent = createItemContent();
     let itemDate = createItemDate();
     let itemSwipeBtns = createItemSwipeBtns();
 
-    item.appendChild(itemCheckBtn);
+    if (toggleColorMap.has(index)) {
+        let toggleColor = calenderColor[toggleColorMap.get(index) % calenderColor.length];
+        itemToggle.style.cssText += 'background-color:' + toggleColor + ';';
+    }
+
+    item.appendChild(itemToggle);
     item.appendChild(itemContent);
     item.appendChild(itemDate);
     item.appendChild(itemSwipeBtns);
@@ -291,9 +343,10 @@ function createItem(data, itemData, index) {
     addSwipeLeft();
     createEdit();
     createAllContent();
+    createTapBlur();
     return item;
 
-    function createItemCheckBtn() {
+    function createItemToggle() {
         let itemCheckBtn = document.createElement('div');
         itemCheckBtn.classList.add('item-toggle');
 
@@ -363,13 +416,6 @@ function createItem(data, itemData, index) {
             y_start = event.changedTouches[0].pageY;
             swipeX = true;
 
-            // 如果已经有item是展开的，并且点击的不是DEL和TOP按钮，则收起来
-            if (expansion) {
-                // 判断是否tap在DEL和TOP按钮范围内
-                let tapItemBtns = x_start < expansion.getBoundingClientRect().right && x_start > expansion.getBoundingClientRect().left && y_start < expansion.getBoundingClientRect().bottom && y_start > expansion.getBoundingClientRect().top;
-
-                if (!tapItemBtns) expansion.classList.remove("swipe-left");
-            }
         });
 
         item.addEventListener('touchmove', function (event) {
@@ -390,7 +436,7 @@ function createItem(data, itemData, index) {
                     let swipeBtns = this.lastChild;
                     event.preventDefault();
                     swipeBtns.classList.add("swipe-left");
-                    expansion = swipeBtns;
+                    expansionItem = swipeBtns;
                 }
             }
         });
@@ -463,17 +509,20 @@ function createItem(data, itemData, index) {
         hammerTest.on('pressup', function (ev) {
             fullTextItem = item;
         });
+    }
 
-        // 长按后，如果触碰了其它位置（失焦），结束
-        function finish() {
-            fullTextItem.removeChild(fullTextItem.lastChild);
-            fullTextItem = null;
-        }
+    function createTapBlur() {
+        $("body").addEventListener('touchstart', function (event) {
+            let x = event.changedTouches[0].pageX;
+            let y = event.changedTouches[0].pageY;
 
-        let x, y;
-        item.addEventListener('touchstart', function (event) {
-            x = event.changedTouches[0].pageX;
-            y = event.changedTouches[0].pageY;
+            // 如果已经有item是展开的，并且点击的不是DEL和TOP按钮，则收起来
+            if (expansionItem) {
+                // 判断是否tap在DEL和TOP按钮范围内
+                let tapItemBtns = x < expansionItem.getBoundingClientRect().right && x > expansionItem.getBoundingClientRect().left && y < expansionItem.getBoundingClientRect().bottom && y > expansionItem.getBoundingClientRect().top;
+
+                if (!tapItemBtns) expansionItem.classList.remove("swipe-left");
+            }
 
             // 如果有item是在长按模式下，预览所有文字的，但触摸的是其它地方，收起来
             if (fullTextItem) {
@@ -481,9 +530,22 @@ function createItem(data, itemData, index) {
                 let tapFullText = x < fullText.getBoundingClientRect().right && x > fullText.getBoundingClientRect().left && y < fullText.getBoundingClientRect().bottom && y > fullText.getBoundingClientRect().top;
 
                 if (!tapFullText) {
-                    finish();
+                    fullTextItem.removeChild(fullTextItem.lastChild);
+                    fullTextItem = null;
                 }
             }
+
+            // 如果有dayDetail展示出来，预览当日任务的，但触摸的是其它地方，收起来
+            if (expansionDay) {
+                let dayDetail = expansionDay.lastChild;
+                let tapFullText = x < dayDetail.getBoundingClientRect().right && x > dayDetail.getBoundingClientRect().left && y < dayDetail.getBoundingClientRect().bottom && y > dayDetail.getBoundingClientRect().top;
+
+                if (!tapFullText) {
+                    expansionDay.removeChild(expansionDay.lastChild);
+                    expansionDay = null;
+                }
+            }
+
         });
     }
 }
@@ -497,14 +559,87 @@ function sendWarningMsg() {
             warningIndexList.forEach(function (index) {
                 data.items[index].alerted = true;
             });
-            console.log(data);
             warningMsg = '';
             warningIndexList = [];
         }
         update();
     });
+}
 
+function updateCalenderBg() {
+    let colorStep = 100 / calenderMaxTaskNum;
+    for (let [key, value] of dateTaskMap) {
+        let dayId = key > 9 ? 'd' + key : 'd0' + key;
+        let dayDiv = $( '#' + dayId);
 
+        let bgImgText = '';
+
+        // 画每一个任务的时间线
+        for (let i = 0, j = 0; i < calenderMaxTaskNum; i++) {
+            let color = "white";
+
+            // 按照任务的index，确定任务颜色、确定任务颜色画的位置
+            let temp = value[j];
+            if (temp) {
+                let taskIndex = temp.taskIndex;
+                if (taskIndex === i) {
+                    color = calenderColor[i % calenderColor.length];
+                    j++;
+                }
+            }
+            bgImgText += ", " + color + " " + colorStep * i + "%" + ", " + color + " " + colorStep * (i + 1) + "%";
+        }
+
+        bgImgText = "background-image: linear-gradient(to bottom" + bgImgText + ");";
+        dayDiv.style.cssText += bgImgText;
+
+        dayDiv.addEventListener('click', function (event) {
+            let dayDetail = document.createElement('div');
+            dayDetail.className = 'day-detail';
+
+            // 如果有dayDetail展示出来，预览当日任务的，收起来
+            if (expansionDay) {
+                expansionDay.removeChild(expansionDay.lastChild);
+                expansionDay = null;
+            }
+
+            value.forEach(function (val) {
+                let detailItem = document.createElement('div');
+                detailItem.className = "detail-item";
+
+                let tag = document.createElement('div');
+                tag.className = "tag";
+                tag.style.cssText += 'background-color:' + calenderColor[val.taskIndex % calenderColor.length] + ';';
+
+                let msg = document.createElement('div');
+                msg.innerHTML = val.msg;
+                msg.className = "msg";
+
+                detailItem.appendChild(tag);
+                detailItem.appendChild(msg);
+                dayDetail.appendChild(detailItem);
+            });
+
+            dayDiv.appendChild(dayDetail);
+            expansionDay = dayDiv;
+
+            dayDetail.addEventListener('click', function (event) {
+                event.stopPropagation();
+                expansionDay.removeChild(expansionDay.lastChild);
+                expansionDay = null;
+            })
+        }, false);
+    }
+}
+
+function checkTd(data) {
+    data.items.forEach(function (itemData) {
+        if (itemData.isTd) {
+            let itemTd = itemData.dateStr.substring(itemData.dateStr.length / 2 + 1, itemData.dateStr.length);
+            let td = dateFormat(new Date());
+            if (itemTd !== td) itemData.isTd = false;
+        }
+    });
 }
 
 window.onload = function () {
@@ -512,6 +647,8 @@ window.onload = function () {
         let data = model.data;
 
         initUI(data);
+
+        checkTd(data);
 
         update();
     });

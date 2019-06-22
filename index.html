@@ -30,6 +30,7 @@
                     <li><a class="selected">All</a></li>
                     <li><a class="">Active</a></li>
                     <li><a class="">Completed</a></li>
+                    <li><a class="td">Td</a></li>
                 </ul>
             </div>
             <scroll-container id="todo-list"></scroll-container>
@@ -40,12 +41,35 @@
             <button id="clear-btn">Clear completed</button>
         </footer>
     </section>
+
+    <section class="calender">
+
+        <div class="year-month-bar">
+            <div class="lastMBtn"><</div>
+            <div><span class="year"></span> <span class="month"></span></div>
+            <div class="nextMBtn"> ></div>
+        </div>
+        <div class="week-bar">
+            <div class="week">Sun</div>
+            <div class="week">Mon</div>
+            <div class="week">Tue</div>
+            <div class="week">Wed</div>
+            <div class="week">Thu</div>
+            <div class="week">Fri</div>
+            <div class="week">Sat</div>
+        </div>
+
+        <div class="days">
+        </div>
+    </section>
 </div>
 <script src="hammer.min.js"></script>
 <script src="model.js"></script>
 <script src="ajax.js"></script>
 <script src="provider-ajax.js"></script>
 <script src="ifttt.js"></script>
+<script src="utils.js"></script>
+<script src="calender.js"></script>
 <script src="todo.js"></script>
 </body>
 </html>
