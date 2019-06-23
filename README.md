@@ -27,7 +27,7 @@ c)      使⽤ajax进⾏HTTP⽹络请求；
 
 a)      存储TODO的**设定时间**（正则匹配输入），可设置为**当日可做**，或者**设置时间段**；
 
-​	- 考虑到设定时间的方便性，使用正则匹配输入的设定时间
+​	- 考虑到设定时间的方便性，使用正则匹配输入的设定时间，如输入"xxxx(td)"，"kkk(2019.06.13-2019.06.30)"
 
 b)      增加**日历**，并且TODO以**甘特图**展示，没有用开源日历插件；
 
@@ -39,9 +39,7 @@ c)      使用**IFTTT**，TODO过期或邻近截止日期，给自己发送邮�
 
    | 邮件列表示例                                                 | 邮件内容示例                                                 |
    | ------------------------------------------------------------ | ------------------------------------------------------------ |
-   | ![](https://github.com/GaoChongwen/web_final_project/blob/master/pic/ifttt.png?raw=true) | ![](https://github.com/GaoChongwen/web_final_project/blob/master/pic/ifttt1.png?raw=true) |
-
-   
+   | ![](https://github.com/GaoChongwen/web_final_project/blob/master/pic/ifttt.png?raw=true) | ![](https://github.com/GaoChongwen/web_final_project/blob/master/pic/ifttt0.png?raw=true) |
 
 d)      **移动端适配**，css以rem设置布局，初始化时调整根字体大小；
 
