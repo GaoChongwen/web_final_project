@@ -6,7 +6,7 @@
 
 ### 0.0 页面展示
 
-![](pic/cover.png)
+![]()
 
 ### 1.0 MVC框架
 
@@ -35,7 +35,13 @@ b)      增加**日历**，并且TODO以**甘特图**展示，没有用开源日
 
 c)      使用**IFTTT**，TODO过期或邻近截止日期，给自己发送邮件；
 
-​	- ifttt.js
+ - ifttt.js
+
+   | 邮件列表示例                                                 | 邮件内容示例                                                 |
+   | ------------------------------------------------------------ | ------------------------------------------------------------ |
+   | ![](https://github.com/GaoChongwen/web_final_project/blob/master/pic/ifttt.png?raw=true) | ![](https://github.com/GaoChongwen/web_final_project/blob/master/pic/ifttt1.png?raw=true) |
+
+   
 
 d)      **移动端适配**，css以rem设置布局，初始化时调整根字体大小；
 
