@@ -6,7 +6,7 @@
 
 ### 0.0 页面展示
 
-![]()
+![](<https://raw.githubusercontent.com/GaoChongwen/web_final_project/master/pic/cover.png>)
 
 ### 1.0 MVC框架
 
